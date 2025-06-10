@@ -15,7 +15,7 @@ import gc
 import time
 
 from Config import Config
-from Initializer import Initializer, InitializerForQueryAttack
+from Initializer import InitializerForQueryAttack
 
 from StrandsEmbeddingSpace import StrandSpace
 
@@ -66,8 +66,6 @@ def load_cfg(cfg_name):
 COMPILERS = ['gcc', 'clang']
 OPTIMIZERS = ['O0', 'O3']
 
-obfuscated_binaries = ['binutils-2.36', 'curl', 'gsl', 'libconfig', 'openssl', 'sqlite']
-
 
 def perform_tests(conf, db_file):
     db = get_test_csv(db_file)
@@ -81,23 +79,12 @@ def perform_tests(conf, db_file):
     model = load_model(conf.MODEL)
 
     # Load strands embedding space
-    embedding_matrix_filename = "embedding_matrix_definitive.pt"  # "embedding_matrix_from_train_unlimit_no_dup.pt"
-    filtered_strands_df_filename = "definitive_strands.csv"  # "filtered_with_radare.csv"
-    ids_filename = "strands_ids_definitive.json"  # "strands_ids_from_train_unlimit_no_dup.json"
+    embedding_matrix_filename = "embedding_matrix_definitive.pt"
+    filtered_strands_df_filename = "definitive_strands.csv"
+    ids_filename = "strands_ids_definitive.json"
     space = StrandSpace(embedding_matrix_filename, filtered_strands_df_filename, ids_filename)
     pool = Pool(processes=N_PROCESSES)
 
-    # LOAD POOL
-    """
-    cfg_files = []  # file.split(".", 1) --> ['x64-clang-O3_libssl-lib-ssl_rsa', 'o_SSL_use_certificate_ASN1.pkl']
-    for _, _, files in os.walk(conf.POOL_PATH):
-        for file in files:
-            if file.endswith(".pkl"):
-                # loaded_cfg = load_cfg(os.path.join(conf.POOL_PATH, file))
-                #functions_pool.append(loaded_cfg)
-                cfg_files.append(os.path.join(conf.POOL_PATH, file))
-    functions_pool = pool.map(load_cfg, cfg_files)
-    """
     pool_files = []
     for _, _, files in os.walk(conf.POOL_PATH):
         for file in files:
@@ -112,11 +99,6 @@ def perform_tests(conf, db_file):
     # divide in split to speed up execution
     for el in tqdm(db):
         # Initialize test
-
-        if config.OBFUSCATOR != None:
-            if el['source_project'] not in obfuscated_binaries:
-                print("SKIPPED BINARY")
-                continue
 
         split_src = el['source_source'].split(":")
         source_c = split_src[0]
@@ -135,15 +117,6 @@ def perform_tests(conf, db_file):
                 variant_file = f"x64-{comp}-{opt}_{el['target_object']}_{target_function}.pkl"
                 variant_cfg = load_cfg(os.path.join(conf.POOL_PATH, variant_file))
                 query_variants.append(variant_cfg)
-
-        """
-        for el in functions_pool:
-            func_name = el['name']
-            obj_name = el['filename'].replace("/app/DB/builds/", "").split("/", 1)[1]
-
-            if target_function == func_name and target_object.split("/", 1)[1] == obj_name:
-                query_variants.append(el)
-        """
 
         initializer = InitializerForQueryAttack(conf, model, source_object, source_function, query_variants,
                                                 target_function)
@@ -192,70 +165,6 @@ def perform_tests(conf, db_file):
                         os.remove(f"{optimizer.model.target_embd}_{idx}.json")
                 del adv_example_cfg, optimizer, applied_transformations
 
-            elif conf.OPTIMIZER == "greedy_mean":
-                from GreedyMeanSimilarity import GreedyMeanSimilarity
-                init_sim = initializer.get_initial_similarity()
-                optimizer = GreedyMeanSimilarity(initializer, conf, space)
-                final_similarity, adv_example_cfg, applied_transformations = optimizer.execute_steps(pool)
-
-                final_instrs = get_number_of_instructions(adv_example_cfg)
-                final_nodes = adv_example_cfg.number_of_nodes()
-
-                str_applied_actions = '-'.join(el for el in applied_transformations)
-
-                # Delete target json file
-                if optimizer and optimizer.model.target_embd:
-                    for idx, _ in enumerate(initializer.target_variants):
-                        os.remove(f"{optimizer.model.target_embd}_{idx}.json")
-                del adv_example_cfg, optimizer, applied_transformations
-
-            elif conf.OPTIMIZER == "greedy_double":
-                from GreedyDouble import GreedyDouble
-                init_sim_1 = initializer.get_initial_similarity_1()
-                init_sim_2 = initializer.get_initial_similarity_2()
-                optimizer = GreedyDouble(initializer, conf, space)
-                final_similarity, adv_example_cfg, applied_transformations = optimizer.execute_steps(pool)
-
-                final_instrs = get_number_of_instructions(adv_example_cfg)
-                final_nodes = adv_example_cfg.number_of_nodes()
-
-                str_applied_actions = '-'.join(el for el in applied_transformations)
-
-                # Delete target json file
-                if optimizer and optimizer.model.target_embd:
-                    os.remove(optimizer.model.target_embd)
-
-                del adv_example_cfg, optimizer, applied_transformations
-
-            else:
-                # UNTARGETED baseline with ollvm obfuscators
-                init_sim = initializer.get_initial_similarity()
-
-                if initializer.model.target_embd:
-                    for idx, _ in enumerate(initializer.target_variants):
-                        # os.remove(f"{obf_initializer.model.target_embd}_{idx}.json")
-                        os.remove(f"{initializer.model.target_embd}_{idx}.json")
-
-                obf_source_object = f"x64-{el['source_compiler']}-{el['source_optimization']}-{conf.OBFUSCATOR}/{el['source_project']}/{el['source_folder']}{el['source_object']}"
-
-                # initializer = InitializerForQueryAttack(conf, model, source_object, source_function, query_variants, target_function)
-                obf_initializer = InitializerForQueryAttack(conf, model, obf_source_object, source_function,
-                                                            query_variants, target_function)
-
-                if obf_initializer.initialize(conf):
-                    final_similarity = obf_initializer.get_initial_similarity()
-                    final_instrs = obf_initializer.get_initial_number_of_instructions()
-                    final_nodes = obf_initializer.get_initial_number_of_nodes()
-
-                    str_applied_actions = conf.OBFUSCATOR
-
-                    if obf_initializer.model.target_embd:
-                        # os.remove(obf_initializer.model.target_embd)
-                        for idx, _ in enumerate(initializer.target_variants):
-                            os.remove(f"{obf_initializer.model.target_embd}_{idx}.json")
-
-                del obf_initializer
-
             end_time = time.perf_counter()
 
             if conf.IS_STAT:
@@ -276,17 +185,10 @@ def perform_tests(conf, db_file):
                     'num_final_instructions': final_instrs,
                     'transformation_type': str_applied_actions,
                     'total_time': end_time - start_time,
-                    'iterations_folder': initializer.experiment_name
+                    'iterations_folder': initializer.experiment_name,
+                    'initial_similarity': init_sim,
+                    'final_similarity': final_similarity
                 }
-
-                if conf.OPTIMIZER != "greedy_double":
-                    record['initial_similarity'] = init_sim
-                    record['final_similarity'] = final_similarity
-                else:
-                    record['initial_similarity_1'] = init_sim_1
-                    record['initial_similarity_2'] = init_sim_2
-                    record['final_similarity_1'] = final_similarity[0]
-                    record['final_similarity_2'] = final_similarity[1]
 
                 final_stats_df = pd.concat([final_stats_df, pd.DataFrame([record])])
 
@@ -349,10 +251,6 @@ if __name__ == "__main__":
     parser.add_argument("-ssp", "--sub_split", dest="sub_split",
                         help="choose between \{1, 2, 3, 4\}", type=int, default=1, required=False)
 
-    # add argument for obfuscator experiments
-    parser.add_argument("-obf", "--obfuscator", dest="obfuscator",
-                        help="choose between \{bcf, fla, sub\}", required=False, default=None)
-
     args = parser.parse_args()
 
     print("##### RUN ATTACK ON #####")
@@ -361,10 +259,6 @@ if __name__ == "__main__":
         print(f"{k} -> {options[k]}")
     print("#########################")
 
-    if args.target_model_2 is None:
-        config = Config.get_default_config_for_query(args)
-    else:
-        config = Config.get_default_config_2_models(args)
+    config = Config.get_default_config_for_query(args)
 
-    # cProfile.run('perform_tests(config, args.data_json)')
     perform_tests(config, args.data_json)

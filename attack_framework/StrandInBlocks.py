@@ -1,6 +1,5 @@
 import json
 
-import os
 import uuid
 
 import copy
@@ -24,8 +23,6 @@ def apply_strand_for_importance(source_cfg, block_id, instr_addr):
 
 
 def apply_strandadd_for_optimizer(source_cfg, block_id, filtered_strand, shellcode, radare_st, instr_addr):
-    # strand_list_filtered = filtered_strand.split(" NEXT_I ")
-    # shellcode = ast.literal_eval(shellcode)
 
     radare_strand = json.loads(radare_st)
 

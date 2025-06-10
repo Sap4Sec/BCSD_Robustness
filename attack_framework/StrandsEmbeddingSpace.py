@@ -1,20 +1,14 @@
 import torch
-import torch.nn.functional as F
 
-torch.set_num_threads(5)
+torch.set_num_threads(10)
 
-from multiprocessing import Pool
 
 import pandas as pd
 
 import random
-import uuid
 import json
 import os
 
-import ast
-
-from transformations.add_strand import get_radare_strand, get_live_at_address, get_push_pop
 
 ROOT_PATH = "/app/vol/"
 
@@ -22,8 +16,7 @@ binbert_embs_folder = "binbert_embs/"
 
 N_PROCESSES = 20
 
-# cuda:0 asm2vec, cuda:1 jtrans
-device = "cpu"  # torch.device("cuda") if torch.cuda.is_available() else "cpu"
+device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
 
 
 class StrandSpace:
@@ -63,9 +56,6 @@ class StrandSpace:
 
         unmasked_return = self.__get_unmasked_random(masked_neighbours_ids)
 
-        #num_neighbours = min(len(unmasked_return), num_neighbours)
-        #if num_neighbours < 0:
-        #    num_neighbours = 1 if keep_father else 0
         if keep_father:
             result = random.sample(unmasked_return, num_neighbours-1) + [strand.to_dict()]
         else:
@@ -88,8 +78,6 @@ class EmbeddingSpace:
 
         embedding_to_query = torch.clone(self.embeddings_matrix[idx]).to(device)
 
-        # dist = F.cosine_similarity(self.embeddings_matrix, embedding_to_query)
-
         embedding_to_query = torch.reshape(embedding_to_query, (1, -1)).to(device)
         embd_to_query_norm = embedding_to_query / embedding_to_query.norm(dim=1)[:, None]
 
@@ -105,16 +93,3 @@ class EmbeddingSpace:
         scores.extend([dist[k].item() for k in top_k])
 
         return res, scores
-
-
-if __name__ == "__main__":
-
-    embedding_matrix_filename = "embedding_matrix.pt"
-    filtered_strands_df_filename = "filtered_strands_len_g_2.csv"
-    ids_filename = "strands_ids.json"
-
-    strand_space = StrandSpace(embedding_matrix_filename, filtered_strands_df_filename, ids_filename)
-
-    my_strand = strand_space.filtered_strands.iloc[0]
-
-    my_neighbors = strand_space.get_neighbors(my_strand)

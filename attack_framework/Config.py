@@ -32,104 +32,6 @@ class Config:
         self.DETAILED_LOGGER = None
 
     @staticmethod
-    def get_default_config(args):
-
-        config = Config()
-
-        config.SPLIT = args.split
-        config.SUB_SPLIT = args.sub_split
-
-        config.DATA_PATH = args.data_path  # + "sources/" if config.SPLIT == 1 else args.data_path + "backup/"
-
-        config.MODEL = args.target_model
-
-        config.ATT_TYPE = args.att_type
-        config.OPTIMIZER = args.optimizer
-
-        config.TRANSFORMATION = args.transformation
-
-        config.ITERATIONS = args.iterations
-        config.LAMBDA = args.lambda_factor
-        config.NUM_POSITIONS = args.num_positions
-        config.H_PERCENTAGE = args.heavy_percentage
-
-        config.IMPORTANCE = True if args.use_importance else False
-
-        importance_folder = "imp" if config.IMPORTANCE else "rand"
-        config.IMPORTANCE_FOLDER = importance_folder
-
-        config.IS_STAT = True if args.get_stats else False
-
-        config.OBFUSCATOR = args.obfuscator
-
-        if config.IS_STAT:
-            if config.OBFUSCATOR is not None:
-                logging_root = "logging_query_obfuscator"
-                stats_root = "stats_query_obfuscator"
-                config.OPTIMIZER = config.OBFUSCATOR
-            else:
-                logging_root = "logging"
-                stats_root = "stats"
-
-            config.BASE_LOGGING_PATH = os.path.join(ROOT_PATH, logging_root, config.OPTIMIZER,
-                                                    config.TRANSFORMATION, ATT_TYPE[config.ATT_TYPE], config.MODEL)
-            config.LOGGING_PATH = os.path.join(config.BASE_LOGGING_PATH, str(config.NUM_POSITIONS),
-                                               str(config.H_PERCENTAGE),
-                                               importance_folder, str(config.LAMBDA),
-                                               f"{config.ITERATIONS}_ITERS", f"SPLIT_{config.SPLIT}",
-                                               f"{config.SPLIT}_{config.SUB_SPLIT}")
-            os.makedirs(config.LOGGING_PATH, exist_ok=True)
-
-            config.BASE_STAT_PATH = os.path.join(ROOT_PATH, stats_root, config.OPTIMIZER, config.TRANSFORMATION,
-                                                 ATT_TYPE[config.ATT_TYPE], config.MODEL)
-            config.FINAL_STAT_PATH = os.path.join(config.BASE_STAT_PATH, str(config.NUM_POSITIONS),
-                                                  str(config.H_PERCENTAGE),
-                                                  importance_folder, str(config.LAMBDA),
-                                                  f"{config.ITERATIONS}_ITERS", f"SPLIT_{config.SPLIT}")
-            os.makedirs(config.FINAL_STAT_PATH, exist_ok=True)
-
-            config.FINAL_CFG_PATH = os.path.join(config.FINAL_STAT_PATH, f"{config.SPLIT}_{config.SUB_SPLIT}")
-            os.makedirs(config.FINAL_CFG_PATH, exist_ok=True)
-
-            # INITIALIZE FINAL STAT FILE
-            config.FINAL_STAT_NAME = f"{config.FINAL_CFG_PATH}/stat_{config.MODEL}_{ATT_TYPE[config.ATT_TYPE]}_{config.SPLIT}_{config.SUB_SPLIT}.csv"  # set split instead of _test
-
-            if not os.path.exists(config.FINAL_STAT_NAME):
-                record = {
-                    'source_object': '',
-                    'source_function': '',
-                    'source_c': '',
-                    'source_func_line': '',
-                    'source_gcc': '',
-                    'target_object': '',
-                    'target_function': '',
-                    'initial_similarity': '',
-                    'final_similarity': '',
-                    'num_initial_nodes': '',
-                    'num_final_nodes': '',
-                    'num_initial_instructions': '',
-                    'num_final_instructions': '',
-                    'transformation_type': '',
-                    'total_time': '',
-                    'iterations_folder': ''
-                }
-
-                df = pd.DataFrame([record])
-
-                df.to_csv(config.FINAL_STAT_NAME, index=False, mode='a')
-
-            format = logging.Formatter('%(levelname)s: %(message)s')
-            config.BRIEF_LOGGER = config.setup_logger("brief", f"{config.LOGGING_PATH}/brief_logger.log",
-                                                      format=format)
-
-            format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-            config.DETAILED_LOGGER = config.setup_logger("detailed",
-                                                         f"{config.LOGGING_PATH}/detailed_logger.log",
-                                                         format=format)
-
-        return config
-
-    @staticmethod
     def get_default_config_for_query(args):
 
         config = Config()
@@ -164,13 +66,8 @@ class Config:
         config.OBFUSCATOR = args.obfuscator
 
         if config.IS_STAT:
-            if config.OBFUSCATOR is not None:
-                logging_root = "logging_query_obfuscator"
-                stats_root = "stats_query_obfuscator"
-                config.OPTIMIZER = config.OBFUSCATOR
-            else:
-                logging_root = "logging_query"
-                stats_root = "stats_query"
+            logging_root = "logging_query"
+            stats_root = "stats_query"
 
             config.BASE_LOGGING_PATH = os.path.join(ROOT_PATH, logging_root, config.OPTIMIZER,
                                                     config.TRANSFORMATION, ATT_TYPE[config.ATT_TYPE], config.MODEL)
@@ -222,98 +119,6 @@ class Config:
             format = logging.Formatter('%(levelname)s: %(message)s')
             config.BRIEF_LOGGER = config.setup_logger("brief", f"{config.LOGGING_PATH}/brief_logger.log",
                                                       format=format)
-
-            format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-            config.DETAILED_LOGGER = config.setup_logger("detailed",
-                                                         f"{config.LOGGING_PATH}/detailed_logger.log",
-                                                         format=format)
-
-        return config
-
-    @staticmethod
-    def get_default_config_2_models(args):
-
-        config = Config()
-
-        config.SPLIT = args.split
-        config.SUB_SPLIT = args.sub_split
-
-        config.DATA_PATH = args.data_path  # + "sources/" if config.SPLIT == 1 else args.data_path + "backup/"
-
-        config.MODEL = args.target_model
-        config.MODEL_2 = args.target_model_2
-
-        config.ATT_TYPE = args.att_type
-        config.OPTIMIZER = "greedy_double"
-
-        config.TRANSFORMATION = args.transformation
-
-        config.ITERATIONS = args.iterations
-        config.LAMBDA = args.lambda_factor
-        config.NUM_POSITIONS = args.num_positions
-        config.H_PERCENTAGE = args.heavy_percentage
-
-        config.IMPORTANCE = True if args.use_importance else False
-
-        importance_folder = "imp" if config.IMPORTANCE else "rand"
-        config.IMPORTANCE_FOLDER = importance_folder
-
-        config.IS_STAT = True if args.get_stats else False
-
-        if config.IS_STAT:
-            config.BASE_LOGGING_PATH = os.path.join(ROOT_PATH, "logging_debug", config.OPTIMIZER,
-                                                    config.TRANSFORMATION, ATT_TYPE[config.ATT_TYPE],
-                                                    config.MODEL + "_" + config.MODEL_2)
-            config.LOGGING_PATH = os.path.join(config.BASE_LOGGING_PATH, str(config.NUM_POSITIONS),
-                                               str(config.H_PERCENTAGE),
-                                               importance_folder, str(config.LAMBDA),
-                                               f"{config.ITERATIONS}_ITERS", f"SPLIT_{config.SPLIT}",
-                                               f"{config.SPLIT}_{config.SUB_SPLIT}")
-            os.makedirs(config.LOGGING_PATH, exist_ok=True)
-
-            config.BASE_STAT_PATH = os.path.join(ROOT_PATH, "stats_debug", config.OPTIMIZER, config.TRANSFORMATION,
-                                                 ATT_TYPE[config.ATT_TYPE], config.MODEL + "_" + config.MODEL_2)
-            config.FINAL_STAT_PATH = os.path.join(config.BASE_STAT_PATH, str(config.NUM_POSITIONS),
-                                                  str(config.H_PERCENTAGE),
-                                                  importance_folder, str(config.LAMBDA),
-                                                  f"{config.ITERATIONS}_ITERS", f"SPLIT_{config.SPLIT}")
-            os.makedirs(config.FINAL_STAT_PATH, exist_ok=True)
-
-            config.FINAL_CFG_PATH = os.path.join(config.FINAL_STAT_PATH, f"{config.SPLIT}_{config.SUB_SPLIT}")
-            os.makedirs(config.FINAL_CFG_PATH, exist_ok=True)
-
-            # INITIALIZE FINAL STAT FILE
-            config.FINAL_STAT_NAME = f"{config.FINAL_CFG_PATH}/stat_{config.MODEL}_{ATT_TYPE[config.ATT_TYPE]}_{config.SPLIT}_{config.SUB_SPLIT}.csv"  # set split instead of _test
-
-            if not os.path.exists(config.FINAL_STAT_NAME):
-                record = {
-                    'source_object': '',
-                    'source_function': '',
-                    'source_c': '',
-                    'source_func_line': '',
-                    'source_gcc': '',
-                    'target_object': '',
-                    'target_function': '',
-                    'initial_similarity_1': '',
-                    'initial_similarity_2': '',
-                    'final_similarity_1': '',
-                    'final_similarity_2': '',
-                    'num_initial_nodes': '',
-                    'num_final_nodes': '',
-                    'num_initial_instructions': '',
-                    'num_final_instructions': '',
-                    'transformation_type': '',
-                    'total_time': '',
-                    'iterations_folder': ''
-                }
-
-                df = pd.DataFrame([record])
-
-                df.to_csv(config.FINAL_STAT_NAME, index=False, mode='a')
-
-            # format = logging.Formatter('%(levelname)s: %(message)s')
-            # config.BRIEF_LOGGER = config.setup_logger("brief", f"{config.LOGGING_PATH}/brief_logger.log",
-            #                                           format=format)
 
             format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
             config.DETAILED_LOGGER = config.setup_logger("detailed",
@@ -573,14 +378,6 @@ class ConfigForTransfer:
 
         config.SEARCH_DEPTH = args.search_depth
 
-        # PATH TO LOGGING FILE
-        # config.BASE_LOGGING_PATH = os.path.join(ROOT_PATH, "logging_transf", config.OPTIMIZER, config.TRANSFORMATION,
-        #                                         ATT_TYPE[config.ATT_TYPE], config.SOURCE_MODEL+"_"+config.TARGET_MODEL)
-        # config.LOGGING_PATH = os.path.join(config.BASE_LOGGING_PATH, str(config.NUM_POSITIONS), str(config.H_PERCENTAGE),
-        #                                    importance_folder, str(config.LAMBDA), f"{config.ITERATIONS}_ITERS",
-        #                                    f"SPLIT_{config.SPLIT}", f"{config.SPLIT}_{config.SUB_SPLIT}")
-        # os.makedirs(config.LOGGING_PATH, exist_ok=True)
-
         # PATH TO ADV EXAMPLE AGAINST SOURCE MODEL
         config.SOURCE_MODEL_BASE_PATH = os.path.join(ROOT_PATH, "stats_query", config.OPTIMIZER, config.TRANSFORMATION,
                                                      ATT_TYPE[config.ATT_TYPE], config.SOURCE_MODEL)
@@ -629,15 +426,6 @@ class ConfigForTransfer:
 
         print(config.FINAL_TRANSF_STAT_NAME)
 
-        # format = logging.Formatter('%(levelname)s: %(message)s')
-        # config.BRIEF_LOGGER = config.setup_logger("brief", os.path.join(config.LOGGING_PATH, "brief_logger.log"),
-        #                                           format=format)
-
-        # format = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-        # config.DETAILED_LOGGER = config.setup_logger("detailed",
-        #                                              os.path.join(config.LOGGING_PATH, "detailed_logger.log"),
-        #                                              format=format)
-
         return config
 
     @staticmethod
@@ -649,68 +437,3 @@ class ConfigForTransfer:
         logger.setLevel(level)
         logger.addHandler(handler)
         return logger
-
-
-class ConfigForObfStats:
-
-    def __init__(self):
-        self.LOGGING_PATH = None
-        self.IS_STAT = False
-
-        self.SOURCE_MODEL = None
-        self.TARGET_MODEL = None
-
-        self.ATT_TYPE = None
-        self.SPLIT = None
-
-        self.TARGET_EMBD = None
-
-        self.STAT_PATH = None
-        self.STAT_NAME = None
-
-        self.BRIEF_LOGGER = None
-        self.DETAILED_LOGGER = None
-
-    @staticmethod
-    def get_config_for_obfstats(args):
-        config = ConfigForObfStats()
-
-        config.SPLIT = args.split
-        config.SUB_SPLIT = args.sub_split
-
-        config.MODEL = args.model
-
-        config.ATT_TYPE = args.att_type
-        config.OPTIMIZER = args.optimizer
-
-        config.TRANSFORMATION = args.transformation
-
-        config.POOL_PATH = args.pool_path
-        config.POOL_SIZE = args.pool_size
-
-        config.ITERATIONS = args.iterations
-        config.LAMBDA = args.lambda_factor
-        config.NUM_POSITIONS = args.num_positions
-        config.H_PERCENTAGE = args.heavy_percentage
-
-        importance_folder = "imp" if args.use_importance else "rand"
-        config.IMPORTANCE_FOLDER = importance_folder
-
-        config.SEARCH_DEPTH = args.search_depth
-
-        # PATH TO ADV EXAMPLE AGAINST SOURCE MODEL
-        config.OBF_MODEL_BASE_PATH = os.path.join(ROOT_PATH, "stats_obfuscator", config.OPTIMIZER,
-                                                  config.TRANSFORMATION,
-                                                  ATT_TYPE[config.ATT_TYPE], config.MODEL)
-        config.OBF_MODEL_STATS_PATH = os.path.join(config.OBF_MODEL_BASE_PATH, str(config.NUM_POSITIONS),
-                                                   str(config.H_PERCENTAGE),
-                                                   importance_folder, str(config.LAMBDA), f"{config.ITERATIONS}_ITERS")
-
-        # PATH TO FUNCTION SEARCH RESULTS FOR TARGET MODEL (to load first successful result)
-        config.MODEL_FS_BASE_PATH = os.path.join(ROOT_PATH, "stats_fs", "greedy", config.TRANSFORMATION,
-                                                 ATT_TYPE[config.ATT_TYPE], config.MODEL)
-        config.MODEL_FS_PATH = os.path.join(config.MODEL_FS_BASE_PATH, str(config.NUM_POSITIONS),
-                                            str(config.H_PERCENTAGE),
-                                            importance_folder, str(0.0), f"{config.ITERATIONS}_ITERS")
-
-        return config

@@ -72,8 +72,6 @@ class GreedyQuery(Optimizer):
 
             self.state, similarity, applied_act, strands = self.execute_single_step(self.state, strands, pool)
 
-            # applied_actions.append(applied_act)
-
             self.detailed_logger.info(f"[GreedyOptimizer] New similarity: {self.state.current_similarity}, "
                                       f"Iter: {iter}")
 
@@ -124,7 +122,6 @@ class GreedyQuery(Optimizer):
             self.detailed_logger.info(f"[GreedyOptimizer] Select local optimum")
 
             # Add factor for modification size
-            # new_similarity = float(max(similarities)) if self.att_type == 0 else float(min(similarities))
             idx_scaled_sim = scaled_sims.index(max(scaled_sims) if self.att_type == 0 else min(scaled_sims))
             new_similarity = float(similarities[idx_scaled_sim])
         else:
@@ -175,9 +172,6 @@ class GreedyQuery(Optimizer):
 
             end = time.perf_counter()
             self.detailed_logger.info(f"[GreedyOptimizer] Update strands candidates: {end - start}")
-
-        # del cfgs_for_batch, similarities
-        # gc.collect()
 
         return new_state, new_similarity, possible_actions[last_idx].type, new_strands
 

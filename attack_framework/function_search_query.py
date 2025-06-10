@@ -101,14 +101,6 @@ def get_best_th_stat(stats_folder, att_type, th, cfg_folder, iteration):
 
     if len(ex_df.index) > 0:
         best_iter_stats, check = get_iter_row(ex_df, att_type[0], th, iteration)
-        # best_iter = best_iter_stats['best_iter']
-
-        '''
-        cfg_pattern = os.path.join(cfg_path, f'*_ITER{best_iter}.pkl')
-        cfg_file = glob.glob(cfg_pattern)
-
-        cfg = load_cfg(cfg_file[0])
-        '''
 
         return best_iter_stats, check
 
@@ -120,15 +112,11 @@ def perform_function_search(conf):
 
     stats_df = pd.read_csv(conf.FINAL_STAT_NAME, skiprows=[1]).to_dict(orient='records')
 
-    # done = already_done(f"{config.FINAL_FS_STAT_NAME}_50.csv")
-
     done = already_done(f"{config.FINAL_FS_STAT_NAME}_{1}.csv")
     if done != 0:
         done += 2
 
     print(f"DONE in {config.FINAL_FS_STAT_NAME}_{1}: {done}")
-
-    # stats_df = [stats_df[0]]
 
     model = load_model(conf.MODEL)
 
@@ -148,7 +136,6 @@ def perform_function_search(conf):
     functions_pool, func_obj_pairs = {}, []
     for file in funcs_from_pool:
         loaded_cfg = load_cfg(os.path.join(pool_path, file))
-        # functions_pool[loaded_cfg['filename'].replace(conf.DATA_PATH, "")] = loaded_cfg
         functions_pool[file] = loaded_cfg
 
         comp_opt_pair = file.split("_", 1)[0]
@@ -202,7 +189,6 @@ def perform_function_search(conf):
             for opt in OPTIMIZERS:
                 variant_file = f"x64-{comp}-{opt}_{target_object.rsplit('/', 1)[1]}_{target_function}.pkl"
                 if (f"x64-{comp}-{opt}", target_function, target_object.split('/', 1)[1]) not in func_obj_pairs:
-                    # variant_file = f"x64-{comp}-{opt}_{target_object.rsplit('/', 1)[1]}_{target_function}.pkl"
                     variant_cfg = load_cfg(os.path.join(conf.POOL_PATH, variant_file))
                     variants_not_in_pool[variant_file] = variant_cfg
                 all_variants.append(variant_file)
@@ -270,7 +256,6 @@ def perform_function_search(conf):
                 final_fs_stat_name = f"{config.FINAL_FS_STAT_NAME}_{k}.csv"
 
                 header = True if not os.path.exists(final_fs_stat_name) else False
-                # final_stats_fs_df = pd.read_csv(final_fs_stat_name)
 
                 # Sort adv similarities and consider top-K
                 top_k = list(sorted_adv_sims_dict.keys())[:k]
@@ -307,19 +292,17 @@ def perform_function_search(conf):
 
                 # check success condition
                 if att_type == "TARGETED":
-                    clean_1 = True if count_vars >= 1 else False  # FALSE se nessuna variante sta tra le top-k
-                    clean_2 = True if count_vars >= 2 else False  # FALSE se c'è al massimo una variante tra le top-k
-                    clean_3 = True if count_vars >= 3 else False  # FALSE se ci sono al massimo 2 varianti tra le top-k
-                    clean_4 = True if count_vars >= 4 else False  # FALSE se ci sono al massimo 3 varianti tra le top-k
+                    clean_1 = True if count_vars >= 1 else False
+                    clean_2 = True if count_vars >= 2 else False
+                    clean_3 = True if count_vars >= 3 else False
+                    clean_4 = True if count_vars >= 4 else False
                 else:
-                    clean_1 = True if count_vars < 4 else False  # TRUE se c'è almeno 1 variante al di fuori delle top-k
-                    clean_2 = True if count_vars < 3 else False  # TRUE se ci sono almeno 2 varianti al di fuori delle top-k
-                    clean_3 = True if count_vars < 2 else False  # TRUE se ci sono almeno 3 varianti al di fuori delle top-k
-                    clean_4 = True if count_vars < 1 else False  # TRUE se tutte e 4 le varianti sono al di fuori delle top-k
+                    clean_1 = True if count_vars < 4 else False
+                    clean_2 = True if count_vars < 3 else False
+                    clean_3 = True if count_vars < 2 else False
+                    clean_4 = True if count_vars < 1 else False
 
                 gt = 'False' if att_type == "TARGETED" else 'True'
-
-                # init_inpool = 'True' if initial_similarity > k_th else 'False'
 
                 fs_record = {
                     'source_object': source_object,
@@ -344,7 +327,6 @@ def perform_function_search(conf):
                     'iterations_folder': record['iterations_folder']
                 }
 
-                # df_to_write = pd.concat([final_stats_fs_df, pd.DataFrame([fs_record])])
                 df_to_write = pd.DataFrame([fs_record])
 
                 df_to_write.to_csv(final_fs_stat_name,
@@ -362,15 +344,7 @@ def get_mod_size(row, iter_folder, att_type):
 
     iters_df = pd.read_csv(csv_file, skiprows=[1])
 
-    """
-    th_condition = iters_df['iter_similarity'] >= row['k_th'] if att_type == 0 else iters_df['iter_similarity'] <= row['k_th']
-    try:
-        iter_row = iters_df[th_condition]
-        iter_row = iter_row.iloc[0]
-    except:
-    """
     iter_row = iters_df.iloc[-1]
-    # print(f"K_TH: {row['k_th']}, best_iter: {iter_row['iter_similarity']}")
     instr_mod_size = iter_row['num_iter_instructions'] - iter_row['num_initial_instructions']
     node_mod_size = iter_row['num_iter_nodes'] - iter_row['num_initial_nodes']
 
@@ -402,7 +376,6 @@ def get_concat_df(conf):
     for subdir in subdirectories:
 
         subdir_path = os.path.join(conf.BASE_FS_STAT_PATH, subdir)
-        # print(subdir_path)
 
         subsubdirectories = [_subdir for _subdir in os.listdir(subdir_path) if
                              os.path.isdir(os.path.join(subdir_path, _subdir))]
@@ -412,17 +385,10 @@ def get_concat_df(conf):
 
             pattern = os.path.join(ssdir_path, f'*_{conf.SEARCH_DEPTH}.csv')
 
-            # print(ssdir_path)
-
             csv_files = glob.glob(pattern)
 
             for csv_f in csv_files:
                 stats_df = pd.read_csv(csv_f)
-
-                # stats_query_folder = ssdir_path.replace("stats_fs_query", "stats_query").replace(f"{conf.POOL_SIZE}_POOL/", "")
-
-                # add modification size here
-                # stats_df = apply_modification_size(stats_query_folder, stats_df, conf.ATT_TYPE)
 
                 pd_dfs.append(stats_df)
 
@@ -437,12 +403,10 @@ def get_stats_fs(concat_df, stat_type="adv", att_type=0):
     print(f"NUM OF EXPERIMENTS: {len(concat_df.index)}")
 
     if stat_type == "adv":
-        # acc = accuracy_score(concat_df['arate_4'], concat_df['gt'])
         accuracies = []
         m_sizes = []
         for i in range(1, 5):
             arate_i = concat_df.loc[concat_df[f'arate@{i}'] == True]
-            # m_sizes.append([round(np.average(arate_i['instrs_m_size']), 2), round(np.average(arate_i['nodes_m_size']), 2)])
             accuracies.append(round((len(arate_i.index) / len(concat_df.index)) * 100, 2))
         return accuracies, m_sizes
     elif stat_type == "adv_for_m":
@@ -461,31 +425,24 @@ def get_stats_fs(concat_df, stat_type="adv", att_type=0):
         accuracies = []
         gt_flag = True if att_type == 0 else False
         for i in range(1, 5):
-            # clean_i = concat_df.loc[concat_df[f'clean@{i}'] == False]
-            # accuracies.append(round((len(clean_i.index) / len(concat_df.index)) * 100, 2))
             init_i = concat_df.loc[concat_df[f'clean@{i}'] == gt_flag]
             accuracies.append(round((len(init_i.index) / len(concat_df.index)) * 100, 2))
-            # accuracies.append(accuracy_score(concat_df[f'clean@{i}'], concat_df['gt']))
-        # in_pool = concat_df.loc[concat_df['clean_performance'] == True]
-        # if conf.ATT_TYPE == 1:
-        #    accuracies.reverse()
         return accuracies
     elif stat_type == "w_adv":
-        accuracies = 0
         arates_columns = ['arate@1', 'arate@2', 'arate@3', 'arate@4']
         concat_df['last_true'] = concat_df[arates_columns].apply(lambda row: row[::-1].idxmax() if row.any() else False,
                                                                  axis=1)
-        # .apply(lambda row: row.idxmax() if row.any() else False, axis=1)
-        # concat_df['wrate'] = False if concat_df['last_true'] is False else penalties[concat_df['last_true']] * concat_df[concat_df['last_true']]
         concat_df['wrate'] = concat_df.apply(
             lambda row: False if row['last_true'] is False else penalties[row['last_true']] * row[row['last_true']],
             axis=1
         )
         accuracies = round((concat_df['wrate'].sum() / len(concat_df.index)) * 100,
-                           2)  # += penalties[i] * ((len(wrate.index) / len(concat_df.index)) * 100)
+                           2)
         print("---------------------")
 
         return accuracies
+
+    return None
 
 
 def close_pool(pool):

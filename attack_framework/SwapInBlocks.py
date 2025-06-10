@@ -1,9 +1,4 @@
 import networkx as nx
-from copy import deepcopy
-from multiprocessing import Pool
-import random
-
-from Attack import Attack
 
 from transformations.instr_swap import swap_single_instr
 
