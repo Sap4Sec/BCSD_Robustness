@@ -5,7 +5,7 @@ This repository contains the implementation of the attack framework proposed in 
 
 The **arXiv** version of our paper is available [here](https://arxiv.org/abs/2412.04163).
 
-If you use this code in your research, please cite our accademic paper:
+If you use this code in your research, please cite our academic paper:
 
 ```bibtex
 @inproceedings{capozzi2025lack,
@@ -47,10 +47,22 @@ docker run --gpus all \
     --entrypoint /bin/bash  adv-sim
 ```
 
-Then, inside the container, you can launch experiments using the provided bash script:
+Then, inside the container, you can launch experiments using the following command:
 
+```bash
+./generate_adv.sh MODEL_NAME N_POS LAMBDA USE_IMP HEAVY_POS ATT_TYPE
+```
 
+where:
 
+```
+MODEL_NAME (str): Name of the target model
+N_POS (int): Number of positions inside the query function to perturb
+LAMBDA (float): Scaling factor for the modification size
+USE_IMP (bool): Whether to use importance to identify positions
+HEAVY_POS (int): Percentage of positions to apply slow (costly) perturbations
+ATT_TYPE (str): Type of attack (TARGETED or UNTARGETED)
+```
 
 ## Acknowledgments
 This work was partially supported by the Italian MUR National Recovery and Resilience Plan funded by the European Union - NextGenerationEU through projects SERICS (PE00000014) and Rome Technopole (ECS00000024).
